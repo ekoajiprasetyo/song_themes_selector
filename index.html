@@ -49,13 +49,13 @@
     }
 
     .group-label {
-      font-size: 0.9rem; /* Ukuran font diperbesar */
+      font-size: 0.9rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       font-weight: 700;
       margin-bottom: 12px;
-      padding: 8px 24px; /* Padding lebih besar untuk efek kapsul */
-      border-radius: 9999px; /* Full rounded capsule */
+      padding: 8px 24px;
+      border-radius: 9999px;
       display: inline-block;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
       /* Warna akan di-set via JS */
@@ -92,6 +92,11 @@
       transform: rotateY(180deg);
       box-shadow: none; /* Shadow handled by back face when opened */
     }
+    
+    /* CSS RULE BARU: Untuk kartu yang sedang di-reveal */
+    .card.revealed .card-inner {
+      transform: rotateY(180deg);
+    }
 
     /* Sisi Kartu */
     .card-face {
@@ -124,9 +129,8 @@
     }
 
     .card-number {
-      font-size: 5.5rem; /* Diperbesar sedikit agar lebih jelas */
+      font-size: 5.5rem;
       font-weight: 800;
-      /* Gradien dan opacity dihapus agar warna solid dan kontras */
       font-family: 'Inter', sans-serif;
       line-height: 1;
       z-index: 10;
@@ -137,7 +141,6 @@
       display: flex;
       flex-direction: column;
       gap: 24px;
-      /* Memastikan padding atas minimal agar kartu pertama presisi */
       padding-top: 4px; 
     }
 
@@ -155,6 +158,32 @@
         transform: translateY(0);
         opacity: 1;
       }
+    }
+    
+    /* Button Styling */
+    .btn-action {
+      background: white;
+      color: #4b5563;
+      border: 1px solid #e5e7eb;
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      cursor: pointer;
+    }
+    .btn-action:hover {
+      background: #f9fafb;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+      color: #1f2937;
+    }
+    .btn-action:active {
+      transform: translateY(0);
     }
 
     /* Scrollbar Halus */
@@ -193,12 +222,27 @@
       
       <!-- Left Column: Available Themes -->
       <section class="glass-panel p-6 md:p-8 min-h-[500px] flex flex-col">
-        <div class="flex items-center justify-between mb-6 border-b border-gray-200/50 pb-4">
+        <div class="flex items-center justify-between mb-6 border-b border-gray-200/50 pb-4 flex-wrap gap-4">
           <h2 class="text-xl font-semibold text-gray-700 flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-green-400"></span>
             Available Themes
           </h2>
-          <span id="count-badge" class="bg-gray-100 text-gray-500 text-xs font-bold px-2 py-1 rounded-md">10</span>
+          <div class="flex items-center gap-2 ml-auto">
+             <!-- Tombol Open/Close Cards Baru -->
+             <button id="btn-reveal" onclick="toggleReveal()" class="btn-action" title="Reveal all card contents">
+                <!-- Icon Mata (Eye) -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span>Open Cards</span>
+             </button>
+
+             <!-- Tombol Shuffle -->
+             <button id="btn-shuffle" onclick="shuffleAndReset()" class="btn-action" title="Randomize card contents">
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l14.2-12.6c.8-1 2-1.7 3.3-1.7H22"/><path d="M2 6h1.4c1.3 0 2.5.6 3.3 1.7l14.2 12.6c.8 1 2 1.7 3.3 1.7H22"/></svg>
+               <span>Shuffle</span>
+             </button>
+             
+             <span id="count-badge" class="bg-gray-100 text-gray-500 text-xs font-bold px-2 py-1 rounded-md min-w-[24px] text-center ml-1">10</span>
+          </div>
         </div>
         
         <div id="available-cards-container" class="grid grid-cols-2 sm:grid-cols-3 gap-5 content-start">
@@ -245,7 +289,7 @@
       { bg: '#FEF2F2', accent: '#EF4444', text: '#7F1D1D' }  // Red
     ];
 
-    const themes = [
+    const themesData = [
        { id: 1, title: "A Letter to My Future Self", description: "This song is written as a message to yourself in the future. You can talk about your hopes, fears, dreams, or advice for who you will become." },
        { id: 2, title: "One Day That Changed Everything", description: "This song tells the story of one important day that changed your life or your way of thinking. It can be a real experience or a fictional story." },
        { id: 3, title: "Behind the Smile", description: "This song is about feelings that people hide behind a smile. It can show sadness, pressure, or struggles that are not seen by others." },
@@ -258,7 +302,10 @@
        { id: 10, title: "I Finally Believe in Myself", description: "This song is about gaining confidence and believing in yourself. It can show a journey from doubt to self-acceptance and strength." }
     ];
 
+    // State
+    let currentThemes = [...themesData]; 
     let flippedCount = 0;
+    let isRevealed = false; // State untuk tombol Open/Close Cards
 
     // Audio Context Setup
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -285,35 +332,125 @@
         gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.3);
+      } else if (type === 'shuffle') {
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+        osc.frequency.linearRampToValueAtTime(400, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
       }
+    }
+
+    // Fisher-Yates Shuffle
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    // Toggle Reveal (Open/Close Cards)
+    function toggleReveal() {
+      const container = document.getElementById('available-cards-container');
+      const cards = container.querySelectorAll('.card');
+      const btn = document.getElementById('btn-reveal');
+      const btnText = btn.querySelector('span');
+      const btnIcon = btn.querySelector('svg');
+
+      isRevealed = !isRevealed;
+
+      // Update state setiap kartu
+      cards.forEach(card => {
+        if (isRevealed) {
+          card.classList.add('revealed');
+        } else {
+          card.classList.remove('revealed');
+        }
+      });
+      
+      // Update UI Tombol
+      if (isRevealed) {
+        btnText.textContent = "Close Cards";
+        // Icon Mata Dicoret (Eye Off)
+        btnIcon.innerHTML = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/>`;
+        playSound('flip');
+      } else {
+        btnText.textContent = "Open Cards";
+        // Icon Mata (Eye)
+        btnIcon.innerHTML = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+        playSound('flip');
+      }
+    }
+
+    function shuffleAndReset() {
+      // 1. Reset Logic
+      flippedCount = 0;
+      document.getElementById('selected-cards-container').innerHTML = `
+         <div id="empty-state" class="text-center py-20 text-gray-400 italic slide-in-top">
+             No themes selected yet.
+         </div>
+      `;
+      document.getElementById('count-badge').textContent = '10';
+      
+      // Reset Reveal Button jika sedang terbuka
+      isRevealed = false;
+      const btnReveal = document.getElementById('btn-reveal');
+      if (btnReveal) {
+        btnReveal.querySelector('span').textContent = "Open Cards";
+        btnReveal.querySelector('svg').innerHTML = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+      }
+      
+      // 2. Shuffle Data
+      currentThemes = shuffleArray([...themesData]);
+      
+      // 3. Re-render
+      init();
+      playSound('shuffle');
+      
+      // Visual feedback on shuffle button
+      const btn = document.getElementById('btn-shuffle');
+      const btnText = btn.querySelector('span');
+      const originalText = btnText.textContent;
+      const originalIcon = btn.querySelector('svg').innerHTML;
+      
+      btnText.textContent = "Shuffled!";
+      setTimeout(() => {
+          btnText.textContent = originalText;
+      }, 1000);
     }
 
     function init() {
       const container = document.getElementById('available-cards-container');
       container.innerHTML = '';
       
-      themes.forEach((theme, index) => {
+      currentThemes.forEach((theme, index) => {
+        const displayNumber = index + 1;
         const themeStyle = cardThemes[index % cardThemes.length];
         
         // Buat Wrapper
         const wrapper = document.createElement('div');
-        wrapper.className = 'card-wrapper';
-        wrapper.id = `wrapper-${theme.id}`;
+        wrapper.className = 'card-wrapper slide-in-top'; 
+        wrapper.style.animationDelay = `${index * 50}ms`; 
+        wrapper.id = `wrapper-pos-${displayNumber}`;
         
         // Buat Kartu
         const card = document.createElement('div');
         card.className = 'card card-available';
-        card.onclick = (e) => handleCardClick(card, wrapper, theme, themeStyle);
+        card.onclick = (e) => handleCardClick(card, wrapper, theme, themeStyle, displayNumber);
         
+        // Back content: Judul dan Deskripsi
         card.innerHTML = `
           <div class="card-inner">
             <div class="card-face card-front" style="background: ${themeStyle.bg}">
-              <!-- Angka sekarang menggunakan warna solid dari tema (opacity dihapus/100%) -->
-              <span class="card-number" style="color: ${themeStyle.text};">${theme.id}</span>
+              <span class="card-number" style="color: ${themeStyle.text};">${displayNumber}</span>
               <div style="position:absolute; bottom:16px; font-weight:600; color:${themeStyle.text}; font-size:0.9rem;">Tap to Open</div>
             </div>
-            <div class="card-face card-back" style="background: white; border-color: ${themeStyle.bg}">
-              <!-- Back content is hidden initially for available cards -->
+            <div class="card-face card-back" style="background: white; border-color: ${themeStyle.bg}; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding: 20px;">
+               <h4 style="font-weight:700; color:#1f2937; margin-bottom:8px; font-size:1.1rem;">${theme.title}</h4>
+               <p style="font-size:0.85rem; color:#6b7280; line-height:1.4;">${theme.description.substring(0, 60)}...</p>
             </div>
           </div>
         `;
@@ -323,26 +460,28 @@
       });
     }
 
-    function handleCardClick(card, wrapper, theme, style) {
+    function handleCardClick(card, wrapper, theme, style, displayNumber) {
       if (card.classList.contains('flipped')) return;
 
       // 1. Animasi Flip di tempat
+      // Note: Jika sedang 'revealed', visualnya sudah di belakang, 
+      // tapi class 'flipped' akan memastikan kartu dianggap sudah "dipilih"
       card.classList.add('flipped');
       playSound('flip');
       flippedCount++;
 
       // 2. Tunggu animasi flip selesai, lalu pindahkan
       setTimeout(() => {
-        moveCard(wrapper, card, theme, style);
+        moveCard(wrapper, card, theme, style, displayNumber);
       }, 600);
     }
 
-    function moveCard(oldWrapper, card, theme, style) {
+    function moveCard(oldWrapper, card, theme, style, displayNumber) {
       const selectedContainer = document.getElementById('selected-cards-container');
       const emptyState = document.getElementById('empty-state');
       const countBadge = document.getElementById('count-badge');
 
-      if (emptyState) emptyState.style.display = 'none';
+      if (emptyState) emptyState.remove(); 
       countBadge.textContent = 10 - flippedCount;
 
       // 1. Hilangkan wrapper lama dengan halus
@@ -353,17 +492,16 @@
         oldWrapper.remove(); // Hapus dari kiri
 
         // 2. Buat struktur baru untuk kolom kanan (Selected)
-        // Kita membuat elemen baru agar bersih dari state grid sebelumnya
         const newWrapper = document.createElement('div');
         newWrapper.className = 'w-full slide-in-top'; 
-        newWrapper.style.marginBottom = '0'; // Reset margin
+        newWrapper.style.marginBottom = '0'; 
         
         // Group Label
         const label = document.createElement('div');
         label.className = 'group-label';
-        label.textContent = `Group #${flippedCount}`; // Mengubah teks ke Group
+        label.textContent = `Group #${flippedCount}`;
         
-        // Dynamic Capsule Styling (Warna mengikuti tema kartu)
+        // Dynamic Capsule Styling
         label.style.backgroundColor = style.bg;
         label.style.color = style.text;
         label.style.border = `1px solid ${style.accent}`;
@@ -376,7 +514,7 @@
         newCard.innerHTML = `
           <div class="p-6 md:p-8 relative overflow-hidden">
             <div class="absolute top-0 right-0 p-4 opacity-20">
-               <span class="text-6xl font-bold text-gray-800">${theme.id}</span>
+               <span class="text-6xl font-bold text-gray-800">${displayNumber}</span>
             </div>
             <h3 class="text-2xl font-bold mb-3 text-gray-800 relative z-10 leading-tight">${theme.title}</h3>
             <p class="text-gray-600 leading-relaxed relative z-10 text-base md:text-lg">${theme.description}</p>
@@ -387,12 +525,11 @@
         newWrapper.appendChild(newCard);
 
         // 3. Masukkan ke atas container (PREPEND)
-        // Menggunakan prepend memastikan elemen baru selalu di paling atas
         selectedContainer.prepend(newWrapper);
         
         playSound('land');
 
-      }, 300); // Waktu tunggu fade out
+      }, 300);
     }
 
     // Initialize
