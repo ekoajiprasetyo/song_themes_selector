@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Song Topic Selector</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    :root {
+      --glass-bg: rgba(255, 255, 255, 0.7);
+      --glass-border: rgba(255, 255, 255, 0.5);
+      --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      box-sizing: border-box;
+      color: #1f2937;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    .app-background {
+      background: fixed linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+      background-image: 
+        radial-gradient(at 0% 0%, hsla(253,16%,7%,0) 0, hsla(253,16%,7%,0) 50%), 
+        radial-gradient(at 50% 0%, hsla(225,39%,30%,0) 0, hsla(225,39%,30%,0) 50%), 
+        radial-gradient(at 100% 0%, hsla(339,49%,30%,0) 0, hsla(339,49%,30%,0) 50%);
+      min-height: 100vh;
+    }
+
+    /* Modern Glass Panel */
+    .glass-panel {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      box-shadow: var(--glass-shadow);
+    }
+
+    /* Card Styling */
+    .card-wrapper {
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 100%;
+    }
+
+    .group-label {
+      font-size: 0.9rem; /* Ukuran font diperbesar */
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 700;
+      margin-bottom: 12px;
+      padding: 8px 24px; /* Padding lebih besar untuk efek kapsul */
+      border-radius: 9999px; /* Full rounded capsule */
+      display: inline-block;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      /* Warna akan di-set via JS */
+    }
+
+    .card {
+      perspective: 1000px;
+      cursor: pointer;
+      position: relative;
+      width: 100%;
+    }
+
+    .card-available {
+        height: 200px; /* Tinggi seragam untuk grid kiri */
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-style: preserve-3d;
+      border-radius: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+
+    .card:hover .card-inner {
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      transform: translateY(-4px);
+    }
+
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+      box-shadow: none; /* Shadow handled by back face when opened */
+    }
+
+    /* Sisi Kartu */
+    .card-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.6);
+    }
+
+    .card-front {
+      background: linear-gradient(145deg, #ffffff, #f3f4f6);
+    }
+    
+    .card-back {
+      background: white;
+      transform: rotateY(180deg);
+      padding: 32px;
+      text-align: left;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      border: 1px solid rgba(0,0,0,0.03);
+    }
+
+    .card-number {
+      font-size: 5.5rem; /* Diperbesar sedikit agar lebih jelas */
+      font-weight: 800;
+      /* Gradien dan opacity dihapus agar warna solid dan kontras */
+      font-family: 'Inter', sans-serif;
+      line-height: 1;
+      z-index: 10;
+    }
+
+    /* Container Transitions */
+    #selected-cards-container {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      /* Memastikan padding atas minimal agar kartu pertama presisi */
+      padding-top: 4px; 
+    }
+
+    /* Animasi masuk */
+    .slide-in-top {
+      animation: slideInTop 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+    }
+
+    @keyframes slideInTop {
+      0% {
+        transform: translateY(-20px);
+        opacity: 0;
+      }
+      100% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* Scrollbar Halus */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.3);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(156, 163, 175, 0.5);
+    }
+  </style>
+ </head>
+ <body class="h-full">
+  <div class="app-background p-6 md:p-10">
+   <div class="max-w-7xl mx-auto">
+    
+    <!-- Header -->
+    <header class="text-center mb-10 md:mb-14 relative z-10">
+      <div class="inline-block relative">
+         <h1 id="main-title" class="text-4xl md:text-5xl font-bold text-gray-800 mb-3 tracking-tight">Song Topic Selector</h1>
+         <div class="h-1 w-24 bg-gradient-to-r from-blue-400 to-purple-400 mx-auto rounded-full"></div>
+      </div>
+      <p id="subtitle" class="text-lg text-gray-500 mt-4 font-light max-w-2xl mx-auto">
+        Click a card to reveal your creative challenge
+      </p>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+      
+      <!-- Left Column: Available Themes -->
+      <section class="glass-panel p-6 md:p-8 min-h-[500px] flex flex-col">
+        <div class="flex items-center justify-between mb-6 border-b border-gray-200/50 pb-4">
+          <h2 class="text-xl font-semibold text-gray-700 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-green-400"></span>
+            Available Themes
+          </h2>
+          <span id="count-badge" class="bg-gray-100 text-gray-500 text-xs font-bold px-2 py-1 rounded-md">10</span>
+        </div>
+        
+        <div id="available-cards-container" class="grid grid-cols-2 sm:grid-cols-3 gap-5 content-start">
+           <!-- Cards injected here -->
+        </div>
+      </section>
+
+      <!-- Right Column: Selected Themes -->
+      <section class="glass-panel p-6 md:p-8 min-h-[500px] flex flex-col relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-purple-200 rounded-full blur-3xl opacity-20 -mr-10 -mt-10 pointer-events-none"></div>
+        
+        <div class="flex items-center justify-between mb-6 border-b border-gray-200/50 pb-4 relative z-10">
+          <h2 class="text-xl font-semibold text-gray-700 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+            Selected Themes
+          </h2>
+          <span class="text-xs text-gray-400 uppercase tracking-wider font-medium">Timeline</span>
+        </div>
+
+        <div id="selected-cards-container" class="relative z-10 w-full">
+           <!-- Selected cards injected here -->
+           <div id="empty-state" class="text-center py-20 text-gray-400 italic">
+             No themes selected yet.
+           </div>
+        </div>
+      </section>
+
+    </div>
+   </div>
+  </div>
+
+  <script>
+    // Konfigurasi Warna Pastel Modern (Lebih soft & elegan)
+    const cardThemes = [
+      { bg: '#EFF6FF', accent: '#3B82F6', text: '#1E3A8A' }, // Blue
+      { bg: '#FFF1F2', accent: '#F43F5E', text: '#881337' }, // Rose
+      { bg: '#F0FDF4', accent: '#22C55E', text: '#14532D' }, // Green
+      { bg: '#FFF7ED', accent: '#EA580C', text: '#7C2D12' }, // Orange
+      { bg: '#FAF5FF', accent: '#A855F7', text: '#581C87' }, // Purple
+      { bg: '#ECFEFF', accent: '#06B6D4', text: '#164E63' }, // Cyan
+      { bg: '#FFFBEB', accent: '#F59E0B', text: '#78350F' }, // Amber
+      { bg: '#FDF4FF', accent: '#D946EF', text: '#701A75' }, // Fuchsia
+      { bg: '#F5F3FF', accent: '#8B5CF6', text: '#4C1D95' }, // Violet
+      { bg: '#FEF2F2', accent: '#EF4444', text: '#7F1D1D' }  // Red
+    ];
+
+    const themes = [
+       { id: 1, title: "A Letter to My Future Self", description: "This song is written as a message to yourself in the future. You can talk about your hopes, fears, dreams, or advice for who you will become." },
+       { id: 2, title: "One Day That Changed Everything", description: "This song tells the story of one important day that changed your life or your way of thinking. It can be a real experience or a fictional story." },
+       { id: 3, title: "Behind the Smile", description: "This song is about feelings that people hide behind a smile. It can show sadness, pressure, or struggles that are not seen by others." },
+       { id: 4, title: "If My Life Were a Movie", description: "This song imagines your life as a movie. You can describe scenes, problems, and lessons, as if your life were a film." },
+       { id: 5, title: "A Message to the World", description: "This song is a message for the world. You can talk about peace, the environment, humanity, or problems in society." },
+       { id: 6, title: "The Voice Nobody Hears", description: "This song tells the story of someone who feels ignored or unheard. It can be about students, teenagers, or anyone whose voice is often overlooked." },
+       { id: 7, title: "The School We Dream Of", description: "This song describes an ideal school. You can imagine what school would be like if students' voices really mattered." },
+       { id: 8, title: "Growing Up Is Not Easy", description: "This song is about the challenges of growing up. You can write about pressure, confusion, expectations, and learning to be yourself." },
+       { id: 9, title: "A World Without Phones", description: "This song imagines a world without smartphones or social media. You can describe the good, the bad, or the funny side of that world." },
+       { id: 10, title: "I Finally Believe in Myself", description: "This song is about gaining confidence and believing in yourself. It can show a journey from doubt to self-acceptance and strength." }
+    ];
+
+    let flippedCount = 0;
+
+    // Audio Context Setup
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playSound(type) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'flip') {
+        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+      } else if (type === 'land') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+      }
+    }
+
+    function init() {
+      const container = document.getElementById('available-cards-container');
+      container.innerHTML = '';
+      
+      themes.forEach((theme, index) => {
+        const themeStyle = cardThemes[index % cardThemes.length];
+        
+        // Buat Wrapper
+        const wrapper = document.createElement('div');
+        wrapper.className = 'card-wrapper';
+        wrapper.id = `wrapper-${theme.id}`;
+        
+        // Buat Kartu
+        const card = document.createElement('div');
+        card.className = 'card card-available';
+        card.onclick = (e) => handleCardClick(card, wrapper, theme, themeStyle);
+        
+        card.innerHTML = `
+          <div class="card-inner">
+            <div class="card-face card-front" style="background: ${themeStyle.bg}">
+              <!-- Angka sekarang menggunakan warna solid dari tema (opacity dihapus/100%) -->
+              <span class="card-number" style="color: ${themeStyle.text};">${theme.id}</span>
+              <div style="position:absolute; bottom:16px; font-weight:600; color:${themeStyle.text}; font-size:0.9rem;">Tap to Open</div>
+            </div>
+            <div class="card-face card-back" style="background: white; border-color: ${themeStyle.bg}">
+              <!-- Back content is hidden initially for available cards -->
+            </div>
+          </div>
+        `;
+        
+        wrapper.appendChild(card);
+        container.appendChild(wrapper);
+      });
+    }
+
+    function handleCardClick(card, wrapper, theme, style) {
+      if (card.classList.contains('flipped')) return;
+
+      // 1. Animasi Flip di tempat
+      card.classList.add('flipped');
+      playSound('flip');
+      flippedCount++;
+
+      // 2. Tunggu animasi flip selesai, lalu pindahkan
+      setTimeout(() => {
+        moveCard(wrapper, card, theme, style);
+      }, 600);
+    }
+
+    function moveCard(oldWrapper, card, theme, style) {
+      const selectedContainer = document.getElementById('selected-cards-container');
+      const emptyState = document.getElementById('empty-state');
+      const countBadge = document.getElementById('count-badge');
+
+      if (emptyState) emptyState.style.display = 'none';
+      countBadge.textContent = 10 - flippedCount;
+
+      // 1. Hilangkan wrapper lama dengan halus
+      oldWrapper.style.opacity = '0';
+      oldWrapper.style.transform = 'scale(0.9)';
+
+      setTimeout(() => {
+        oldWrapper.remove(); // Hapus dari kiri
+
+        // 2. Buat struktur baru untuk kolom kanan (Selected)
+        // Kita membuat elemen baru agar bersih dari state grid sebelumnya
+        const newWrapper = document.createElement('div');
+        newWrapper.className = 'w-full slide-in-top'; 
+        newWrapper.style.marginBottom = '0'; // Reset margin
+        
+        // Group Label
+        const label = document.createElement('div');
+        label.className = 'group-label';
+        label.textContent = `Group #${flippedCount}`; // Mengubah teks ke Group
+        
+        // Dynamic Capsule Styling (Warna mengikuti tema kartu)
+        label.style.backgroundColor = style.bg;
+        label.style.color = style.text;
+        label.style.border = `1px solid ${style.accent}`;
+
+        // Kartu Baru (Versi Expanded)
+        const newCard = document.createElement('div');
+        newCard.className = 'w-full bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100';
+        newCard.style.borderLeft = `6px solid ${style.accent}`;
+        
+        newCard.innerHTML = `
+          <div class="p-6 md:p-8 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-4 opacity-20">
+               <span class="text-6xl font-bold text-gray-800">${theme.id}</span>
+            </div>
+            <h3 class="text-2xl font-bold mb-3 text-gray-800 relative z-10 leading-tight">${theme.title}</h3>
+            <p class="text-gray-600 leading-relaxed relative z-10 text-base md:text-lg">${theme.description}</p>
+          </div>
+        `;
+
+        newWrapper.appendChild(label);
+        newWrapper.appendChild(newCard);
+
+        // 3. Masukkan ke atas container (PREPEND)
+        // Menggunakan prepend memastikan elemen baru selalu di paling atas
+        selectedContainer.prepend(newWrapper);
+        
+        playSound('land');
+
+      }, 300); // Waktu tunggu fade out
+    }
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', init);
+
+  </script>
+ </body>
+</html>
