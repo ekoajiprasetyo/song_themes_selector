@@ -3,10 +3,10 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Song Topic Selector</title>
+  <title>Song Themes Selector</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     
     :root {
       --glass-bg: rgba(255, 255, 255, 0.7);
@@ -206,15 +206,29 @@
   <div class="app-background p-6 md:p-10">
    <div class="max-w-7xl mx-auto">
     
-    <!-- Header -->
-    <header class="text-center mb-10 md:mb-14 relative z-10">
-      <div class="inline-block relative">
-         <h1 id="main-title" class="text-4xl md:text-5xl font-bold text-gray-800 mb-3 tracking-tight">Song Topic Selector</h1>
-         <div class="h-1 w-24 bg-gradient-to-r from-blue-400 to-purple-400 mx-auto rounded-full"></div>
+    <!-- Header Baru yang Lebih Elegan -->
+    <header class="mb-10 md:mb-14 relative z-10 flex justify-center">
+      <div class="glass-panel px-8 py-8 md:px-12 md:py-10 text-center relative overflow-hidden max-w-3xl w-full mx-auto shadow-xl">
+         <!-- Elemen Dekoratif di dalam Header -->
+         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 opacity-90"></div>
+         <div class="absolute -top-10 -left-10 w-40 h-40 bg-blue-100 rounded-full blur-3xl opacity-40 pointer-events-none"></div>
+         <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-purple-100 rounded-full blur-3xl opacity-40 pointer-events-none"></div>
+
+         <div class="relative z-10">
+             <!-- Icon Container -->
+             <div class="inline-flex items-center justify-center w-14 h-14 mb-5 rounded-2xl bg-white border border-gray-100 shadow-sm text-purple-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+             </div>
+             
+             <h1 id="main-title" class="text-4xl md:text-5xl font-extrabold text-gray-800 mb-4 tracking-tight leading-tight">
+               Song Themes Selector
+             </h1>
+             
+             <p id="subtitle" class="text-lg text-gray-500 font-medium max-w-xl mx-auto leading-relaxed">
+               Click a card to reveal your creative challenge
+             </p>
+         </div>
       </div>
-      <p id="subtitle" class="text-lg text-gray-500 mt-4 font-light max-w-2xl mx-auto">
-        Click a card to reveal your creative challenge
-      </p>
     </header>
 
     <!-- Main Grid -->
@@ -228,7 +242,7 @@
             Available Themes
           </h2>
           <div class="flex items-center gap-2 ml-auto">
-             <!-- Tombol Open/Close Cards Baru -->
+             <!-- Tombol Open/Close Cards -->
              <button id="btn-reveal" onclick="toggleReveal()" class="btn-action" title="Reveal all card contents">
                 <!-- Icon Mata (Eye) -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
